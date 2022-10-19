@@ -2,10 +2,14 @@ import os
 import bcrypt
 import uvicorn
 from fastapi import FastAPI, Response, Depends, UploadFile, File
-from database import schema
+
+
 from starlette.responses import JSONResponse
 from typing import Optional, List
 from sqlalchemy.orm import Session
+
+
+from database import schema
 from database import base
 from database.models import userDB
 from database.models import gameDB
