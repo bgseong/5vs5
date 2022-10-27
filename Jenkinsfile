@@ -1,43 +1,31 @@
 node {
-    // Jenkins 파일에서 취급하는 파라미터들을 미리 정의한다.
-    // 아래와 같이 미리 정의하면 Jenkins Job 이 Parametrized Job 이 되며 기본 변수들이 들어가게 된다
-    properties(
-            [
-                    [$class: 'ParametersDefinitionProperty', parameterDefinitions:
-                            [
-                                    [$class: 'BooleanParameterDefinition', defaultValue: false, description: '테스트를 Skip 할 수 있습니다. 선택 시 테스트를 건너뛰고 체크아웃 - 빌드 - 아카이빙만 진행합니다', name: 'skipTests']
-                                    , [$class: 'StringParameterDefinition', defaultValue: 'development', description: 'Maven에서 Active 할 Profile 을 입력하세요. 예) production', name: 'activeProfile']
-                            ]
-                    ]])
+  // JDK 8 사용하도록 설정하기
+  stage 'Setting'
+  def javaHome = tool name: 'jdk8', type: 'hudson.model.JDK'
+  env.JAVA_HOME = "${javaHome}"
+  env.PATH = "${env.PATH}:${env.JAVA_HOME}/bin"
 
-    def mvnHome
+  // github에서 소스 얻어오기
+  stage 'Checkout'
+  git branch: 'development', credentialsId: '{your credential id}', url: '{your git url}'
 
-    stage('Preparation') { // for display purposes
-        echo "Current workspace : ${workspace}"
-        // Get the Maven tool.
-        // ** NOTE: This 'M3' Maven tool must be configured
-        // **       in the global configuration.
-        mvnHome = tool 'M3'
-    }
-    stage('Checkout') {
-        // Get some code from a Git repository
-        checkout scm
-    }
-    if (skipTests != true) {
-        stage('Test') {
-            sh "'${mvnHome}/bin/mvn' -P ${activeProfile} -Dmaven.test.failure.ignore -B verify"
-        }
-        stage('Store Test Results') {
-            junit '**/target/surefire-reports/TEST-*.xml'
-        }
-    }
-    stage('Build') {
-        sh "'${mvnHome}/bin/mvn' -P ${activeProfile} -Dmaven.test.skip=true clean install"
-    }
-    stage('Archive') {
-        archive '**/target/*.jar'
-    }
-    stage('Deploy') {
-        echo "Deploy is not yet implemented"
-    }
+  // Maven으로 빌드 실행하기
+  stage 'Build'
+  def mvnHome = tool 'M3'
+  sh "${mvnHome}/bin/mvn -P local -Dmaven.test.skip=true -Ddeploy-path=./deploy clean install"
+
+  // 테스트 진행하기
+  stage 'Test'
+  sh "${mvnHome}/bin/mvn -P local -B -Dmaven.test.failure.ignore verify"
+  step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+
+  // 정적 검사 수행
+  stage 'Analysis'
+  sh "${mvnHome}/bin/mvn site"
+  step([$class: 'CheckStylePublisher', canComputeNew: false, defaultEncoding: '', healthy: '', pattern: '**/checkstyle-result.xml', unHealthy: ''])
+  step([$class: 'FindBugsPublisher', canComputeNew: false, defaultEncoding: '', excludePattern: '', healthy: '', includePattern: '', pattern: '**/findbugsXml.xml', unHealthy: ''])
+  step([$class: 'PmdPublisher', canComputeNew: false, defaultEncoding: '', healthy: '', pattern: '**/pmd.xml', unHealthy: ''])
+
+  // 패키지 저장
+  step([$class: 'ArtifactArchiver', artifacts: '**/target/*.jar', fingerprint: true])
 }
