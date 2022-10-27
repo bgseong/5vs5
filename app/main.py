@@ -35,29 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get('/getReg', response_model=List[schema.ResponseReg])
-async def get_memos(db: Session = Depends(base.get_db)):
-    users = db.query(userDB.User).all()
-    return users
+from routers import Router_User
 
-
-@app.get('/getGame', response_model=List[schema.ResponseGame])
-async def get_games(db: Session = Depends(base.get_db)):
-    games = db.query(gameDB.Game).all()
-    return games
-
-@app.get('/getUser', response_model=List[schema.ResponseUser])
-async def get_users(db: Session = Depends(base.get_db)):
-    users = db.query(userDB.RegisteredUsers).all()
-    return users
-
-@app.post('/postuser', response_model=schema.ResponseUser)
-async def register_user(req: schema.RequestUser, db: Session = Depends(base.get_db)):
-    user = userDB.RegisteredUsers(**req.dict())
-    db.add(user)
-    db.commit()
-
-    return user
+app.include_router(Router_User.router)
 
 @app.post('/upload')
 async def uploadFile(file:UploadFile, db: Session = Depends(base.get_db)):

@@ -1,12 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 class RequestUser(BaseModel):
     name : str
 
 class ResponseUser(BaseModel):
     inherenceid : str
-    name : str
+    email : str
+    password : str
+    email_val : bool
 
     class Config:
         orm_mode = True
