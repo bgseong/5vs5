@@ -1,5 +1,5 @@
-import os
 import bcrypt
+import os
 import uvicorn
 from fastapi import FastAPI, Response, Depends, UploadFile, File
 
