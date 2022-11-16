@@ -1,7 +1,7 @@
 node {
     def hello = 'Hello bgsung' // 변수선언
     stage ('clone') {
-        git 'https://github.com/bgseong/5vs5.git' // git clone
+        git credentialsId: 'bgs', url: 'https://github.com/bgseong/5vs5.git'
     }
     
     stage ('print') {
