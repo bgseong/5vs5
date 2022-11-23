@@ -1,10 +1,15 @@
-node {
-    def hello = 'Hello bgsung' // 변수선언
-    stage ('clone') {
-        git credentialsId: 'bgs', url: 'https://github.com/bgseong/5vs5.git'
+pipeline{
+    agent any
+
+    environment{
+        VERSION = "1.0"
     }
-    
-    stage ('print') {
-        print(hello) // 함수 + 변수 사용
+    stages {
+        stage("build") {
+            sh "docker build --tag fastapi:${VERSION}"
+        }
+        stage("Run") {
+            sh "docker run --rm -p 8080:8000 fastapi:${VERSION}"
+        }
     }
 }
