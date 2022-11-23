@@ -6,10 +6,15 @@ pipeline{
     }
     stages {
         stage("build") {
-            sh "docker build --tag fastapi:${VERSION}"
+            steps{
+                sh "docker build --tag fastapi:${VERSION}"
+            }
         }
         stage("Run") {
-            sh "docker run --rm -p 8080:8000 fastapi:${VERSION}"
+            steps{
+                sh "docker run --rm -p 8080:8000 fastapi:${VERSION}"
+            }
         }
+                
     }
 }
