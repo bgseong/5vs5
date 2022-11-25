@@ -58,3 +58,7 @@ class ResponseCivill(RequestCivill):
 class Register(BaseModel):
     email: Optional[str]
     password: Optional[str]
+
+class login(BaseModel):
+    email: Optional[str]
+    password: Optional[str]

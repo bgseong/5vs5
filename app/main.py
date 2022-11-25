@@ -1,6 +1,6 @@
-import bcrypt
+import bcrypt, jwt
 import os
-import uvicorn
+from datetime import datetime,timedelta
 from fastapi import FastAPI, Response, Depends, UploadFile, File
 
 
@@ -104,3 +104,46 @@ async def oauth(token: str, db: Session = Depends(base.get_db)):
     else:
         return "no"
     return 0
+
+@app.post('/login')
+async def login(req: schema.login, db: Session = Depends(base.get_db)):
+    req_dict = req.dict()
+    check_email=db.query(userDB.RegisteredUsers).filter(userDB.RegisteredUsers.email == req_dict['email']).count()
+    if check_email:
+        user_info=db.query(userDB.RegisteredUsers).filter(userDB.RegisteredUsers.email == req_dict['email']).first()
+
+        password=user_info.password
+
+        hashed_password=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        check_password = bcrypt.checkpw(req_dict['password'].encode('utf-8'),hashed_password)
+
+        if check_password:
+            access_token=create_access_token(user_info)
+            refresh_token=create_refresh_token(user_info)
+            return access_token, refresh_token
+    return "no"
+
+
+
+ACCESS_TOKEN_EXPIRE_MINUTE = 30
+REFRESH_TOKEN_EXPIRE_MINUTE = 60 * 24 * 7
+
+
+
+def create_access_token(user_info):
+    expire_delta = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTE)
+    payload={ 'email ': user_info.email, 'inherenceid':user_info.inherenceid, "exp" : expire_delta}
+
+    from config.utils import SECRET_KEY
+    jwt_token=jwt.encode(payload, SECRET_KEY)
+    return jwt_token
+    
+def create_refresh_token(user_info):
+    expire_delta = datetime.utcnow() + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTE)
+    payload={ 'email ': user_info.email, 'inherenceid':user_info.inherenceid, "exp" : expire_delta}
+
+    from config.utils import REFRESH_SECRET_KEY
+    jwt_token=jwt.encode(payload, REFRESH_SECRET_KEY)
+    return jwt_token
+    
