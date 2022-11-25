@@ -7,12 +7,12 @@ pipeline{
     stages {
         stage("build") {
             steps{
-                sh "docker build --tag fastapi:${VERSION}"
+                sh "docker build --tag fastapi:${VERSION} ."
             }
         }
         stage("Run") {
             steps{
-                sh "docker run --rm -p 8080:8000 fastapi:${VERSION}"
+                sh "docker-compose up"
             }
         }
                 
